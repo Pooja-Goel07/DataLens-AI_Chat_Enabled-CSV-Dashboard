@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataLens: AI-Powered CSV Viewer</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-chart-line"></i>
+                <h1>DataLens</h1>
+                <span class="subtitle">AI-Powered CSV Viewer</span>
+            </div>
+            <div class="header-actions">
+                <button class="history-btn" id="historyBtn">
+                    <i class="fas fa-history"></i>
+                    History
+                </button>
+                <button class="upload-btn" id="uploadBtn">
+                    <i class="fas fa-plus"></i>
+                    Upload CSV
+                </button>
+                <button class="login-btn" id="loginBtn">
+                    <i class="fas fa-user"></i>
+                    Login
+                </button>
+                <button class="signup-btn" id="signupBtn">
+                    <i class="fas fa-user-plus"></i>
+                    Sign Up
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Content Area -->
+        <div class="content-area">
+            <!-- Chat Panel -->
+            <div class="chat-panel">
+                <div class="chat-header">
+                    <h3>AI Assistant</h3>
+                    <div class="chat-status">
+                        <span class="status-indicator active"></span>
+                        <span>Ready</span>
+                    </div>
+                </div>
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message bot-message">
+                        <div class="message-avatar">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div class="message-content">
+                            <p>Hello! I'm your AI assistant. I can help you analyze the active table data. What would
+                                you like to know?</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-input-container">
+                    <div class="chat-input">
+                        <input type="text" id="chatInput" placeholder="Ask me anything about your data...">
+                        <button id="sendBtn">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report Panel -->
+            <div class="report-panel">
+                <div class="report-header" id="reportHeader">
+                    <h3>Data Report</h3>
+                    <div class="report-info">
+                        <span class="table-name" id="activeTableName"></span>
+                        <span class="last-updated" id="lastUpdated" style="display:none;"></span>
+                    </div>
+                </div>
+                <div class="report-content" id="reportContent">
+                    <!-- <div class="loading-state" id="loadingState">
+                        <div class="spinner"></div>
+                        <p>Generating report...</p>
+                    </div> -->
+                    <!-- Report content will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Sidebar (initially hidden) -->
+    <aside class="history-sidebar" id="historySidebar">
+        <div class="sidebar-header" style="background-color: rgb(162, 237, 237);">
+            <h3>Table History</h3>
+            <button class="close-sidebar" id="closeSidebar">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="table-list" id="tableList">
+            <!-- Tables will be populated here -->
+        </div>
+    </aside>
+
+    <!-- Upload Modal -->
+    <div class="modal" id="uploadModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Upload CSV File</h3>
+                <button class="close-btn" id="closeUploadModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form class="upload-form" id="uploadForm">
+                    <div class="form-group">
+                        <label for="tableName">Table Name</label>
+                        <input type="text" id="tableName" placeholder="Enter table name" required>
+                    </div>
+                    <div class="upload-area" id="uploadArea">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Drag and drop your CSV file here</p>
+                        <p>or</p>
+                        <button type="button" class="browse-btn">Browse Files</button>
+                        <input type="file" id="fileInput" accept=".csv" hidden>
+                    </div>
+                    <button type="submit" class="submit-upload-btn" disabled>Upload CSV</button>
+                </form>
+                <div class="upload-progress" id="uploadProgress" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <p id="progressText">Uploading...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Login</h3>
+                <button class="close-btn" id="closeLoginModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form class="login-form" id="loginForm">
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" required>
+                    </div>
+                    <button type="submit" class="submit-btn">Login</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sign Up Modal -->
+    <div class="modal" id="signupModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Sign Up</h3>
+                <button class="close-btn" id="closeSignupModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form class="signup-form" id="signupForm">
+                    <div class="form-group">
+                        <label for="signupUsername">Username</label>
+                        <input type="text" id="signupUsername" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signupPassword">Password</label>
+                        <input type="password" id="signupPassword" required>
+                    </div>
+                    <button type="submit" class="submit-btn">Sign Up</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

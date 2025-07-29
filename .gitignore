@@ -1,0 +1,43 @@
+# ======================
+# Python - Backend
+# ======================
+backend/__pycache__/
+backend/*.py[cod]
+backend/.Python
+backend/env/
+backend/venv/
+backend/instance/
+backend/.pytest_cache/
+backend/.mypy_cache/
+backend/.vscode/
+backend/.idea/
+*.sqlite3
+*.db
+
+# Environment files
+backend/.env
+.env
+
+# Log files
+*.log
+
+# ======================
+# Frontend - Static (HTML/CSS/JS only)
+# ======================
+# No build tools or package managers used
+
+# ======================
+# OS & IDEs
+# ======================
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.bak
+*.tmp
+
+# VS Code settings
+.vscode/
+
+# IntelliJ IDEA
+.idea/
