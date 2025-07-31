@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,15 +7,20 @@
     <link rel="stylesheet" href="styles.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-
 <body>
     <!-- Header -->
     <header class="header">
         <div class="header-content">
-            <div class="logo">
-                <i class="fas fa-chart-line"></i>
-                <h1>DataLens</h1>
-                <span class="subtitle">AI-Powered CSV Viewer</span>
+            <div class="header-left">
+                <div class="logo">
+                    <i class="fas fa-chart-line"></i>
+                    <h1>DataLens</h1>
+                    <span class="subtitle">AI-Powered CSV Viewer</span>
+                </div>
+                <button class="logout-btn-left" id="logoutBtnLeft" style="display: none;">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </button>
             </div>
             <div class="header-actions">
                 <button class="history-btn" id="historyBtn">
@@ -58,8 +62,7 @@
                             <i class="fas fa-robot"></i>
                         </div>
                         <div class="message-content">
-                            <p>Hello! I'm your AI assistant. I can help you analyze the active table data. What would
-                                you like to know?</p>
+                            <p>Hello! I'm your AI assistant. I can help you analyze the active table data. What would you like to know?</p>
                         </div>
                     </div>
                 </div>
@@ -76,26 +79,32 @@
             <!-- Report Panel -->
             <div class="report-panel">
                 <div class="report-header" id="reportHeader">
-                    <h3>Data Report</h3>
-                    <div class="report-info">
-                        <span class="table-name" id="activeTableName"></span>
-                        <span class="last-updated" id="lastUpdated" style="display:none;"></span>
+                    <div class="report-title">
+                        <h3>Data Report</h3>
+                        <div class="report-meta">
+                            <span class="table-name" id="activeTableName"></span>
+                            <span class="last-updated" id="lastUpdated" style="display:none;"></span>
+                        </div>
+                    </div>
+                    <div class="report-actions">
+                        <!-- <button class="export-btn" title="Export Report">
+                            <i class="fas fa-download"></i>
+                        </button> -->
+                        <!-- <button class="refresh-btn" title="Refresh Report">
+                            <i class="fas fa-sync-alt"></i>
+                        </button> -->
                     </div>
                 </div>
                 <div class="report-content" id="reportContent">
-                    <!-- <div class="loading-state" id="loadingState">
-                        <div class="spinner"></div>
-                        <p>Generating report...</p>
-                    </div> -->
                     <!-- Report content will be loaded here -->
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- History Sidebar (initially hidden) -->
+    <!-- History Sidebar -->
     <aside class="history-sidebar" id="historySidebar">
-        <div class="sidebar-header" style="background-color: rgb(162, 237, 237);">
+        <div class="sidebar-header">
             <h3>Table History</h3>
             <button class="close-sidebar" id="closeSidebar">
                 <i class="fas fa-times"></i>
@@ -192,5 +201,4 @@
 
     <script src="script.js"></script>
 </body>
-
 </html>

@@ -1,13 +1,12 @@
-# report.py
-
+# report.py - Fixed version with proper authentication
 import os
 import pandas as pd
 import numpy as np
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 import json
-from upload import get_current_session
+from upload import get_current_session, get_current_user
 
 load_dotenv()
 
@@ -152,7 +151,7 @@ def detect_outliers(df):
         for col in numeric_cols:
             if df[col].isna().all():
                 continue
-                
+            
             Q1 = df[col].quantile(0.25)
             Q3 = df[col].quantile(0.75)
             IQR = Q3 - Q1
@@ -252,13 +251,17 @@ def generate_data_preview(df):
         return {"error": f"Error generating data preview: {str(e)}"}
 
 @report_router.get("/generate_report/")
-def generate_report():
+def generate_report(current_user: str = Depends(get_current_user)):
     """Generate a comprehensive report for the active dataset"""
     try:
         session = get_current_session()
         
         if not session["active_table"]:
             raise HTTPException(status_code=400, detail="No active dataset. Please upload a CSV file first.")
+        
+        # Verify user owns the active table
+        if session.get("current_user") != current_user:
+            raise HTTPException(status_code=403, detail="You don't have access to the current active table.")
         
         # Get the DataFrame
         df = get_dataframe_from_active_table()
@@ -280,16 +283,23 @@ def generate_report():
         }
         
         return report
-        
+    
     except HTTPException:
         raise
     except Exception as e:
+        print(f"Error in generate_report: {e}")
         raise HTTPException(status_code=500, detail=f"Error generating report: {str(e)}")
 
 @report_router.get("/graph_data/{graph_type}/{column}")
-def get_graph_data(graph_type: str, column: str):
+def get_graph_data(graph_type: str, column: str, current_user: str = Depends(get_current_user)):
     """Get data for a specific graph"""
     try:
+        session = get_current_session()
+        
+        # Verify user owns the active table
+        if session.get("current_user") != current_user:
+            raise HTTPException(status_code=403, detail="You don't have access to the current active table.")
+        
         df = get_dataframe_from_active_table()
         if df is None:
             raise HTTPException(status_code=500, detail="Could not load data from active table.")
@@ -328,16 +338,23 @@ def get_graph_data(graph_type: str, column: str):
         
         else:
             raise HTTPException(status_code=400, detail=f"Unsupported graph type: {graph_type}")
-            
+    
     except HTTPException:
         raise
     except Exception as e:
+        print(f"Error in get_graph_data: {e}")
         raise HTTPException(status_code=500, detail=f"Error getting graph data: {str(e)}")
 
 @report_router.get("/scatter_data/{col1}/{col2}")
-def get_scatter_data(col1: str, col2: str):
+def get_scatter_data(col1: str, col2: str, current_user: str = Depends(get_current_user)):
     """Get data for scatter plot"""
     try:
+        session = get_current_session()
+        
+        # Verify user owns the active table
+        if session.get("current_user") != current_user:
+            raise HTTPException(status_code=403, detail="You don't have access to the current active table.")
+        
         df = get_dataframe_from_active_table()
         if df is None:
             raise HTTPException(status_code=500, detail="Could not load data from active table.")
@@ -356,6 +373,7 @@ def get_scatter_data(col1: str, col2: str):
             "y_column": col2,
             "count": int(len(clean_df))
         }
-        
+    
     except Exception as e:
+        print(f"Error in get_scatter_data: {e}")
         raise HTTPException(status_code=500, detail=f"Error getting scatter plot data: {str(e)}")

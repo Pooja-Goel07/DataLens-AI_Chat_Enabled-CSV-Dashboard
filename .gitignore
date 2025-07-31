@@ -1,43 +1,32 @@
-# ======================
-# Python - Backend
-# ======================
-backend/__pycache__/
-backend/*.py[cod]
-backend/.Python
-backend/env/
-backend/venv/
-backend/instance/
-backend/.pytest_cache/
-backend/.mypy_cache/
-backend/.vscode/
-backend/.idea/
+# Ignore compiled Python files and cache folders
+__pycache__/
+*.py[cod]
 *.sqlite3
 *.db
 
-# Environment files
-backend/.env
+# Ignore environment variable files (security reasons)
 .env
+*.env
 
-# Log files
+# Ignore virtual environment folders (these can be recreated)
+venv/
+backend/venv/
+backend/env/
+
+# Ignore IDE/editor config folders (e.g., VS Code, JetBrains)
+.vscode/
+.idea/
+
+# Ignore temporary and backup files
 *.log
-
-# ======================
-# Frontend - Static (HTML/CSS/JS only)
-# ======================
-# No build tools or package managers used
-
-# ======================
-# OS & IDEs
-# ======================
-.DS_Store
-Thumbs.db
-*.swp
-*.swo
 *.bak
 *.tmp
+*.swp
+*.swo
 
-# VS Code settings
-.vscode/
+# Ignore temporary FastAPI data (if any)
+backend/temp/
+backend/instance/
 
-# IntelliJ IDEA
-.idea/
+# Ignore generated graphs or static analysis output
+backend/graphs/

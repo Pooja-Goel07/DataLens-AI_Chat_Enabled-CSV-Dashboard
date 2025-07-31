@@ -1,14 +1,13 @@
-# query.py
-
+# query.py - Fixed version with proper authentication
 import os
-from fastapi import APIRouter, Query, HTTPException, Body
+from fastapi import APIRouter, Query, HTTPException, Body, Depends
 from langchain_community.utilities import SQLDatabase
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from dotenv import load_dotenv
 import re
-from upload import get_current_session
+from upload import get_current_session, get_current_user
 from sqlalchemy import create_engine, text
 from passlib.context import CryptContext
 
@@ -71,7 +70,7 @@ CONCEPTUAL_PROMPT = """You are a statistics and data analysis expert. Answer the
 Provide a clear explanation that helps someone understand the concept."""
 
 try:
-    llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.1, max_tokens=1500)
+    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0.1, max_tokens=1500)
     db = SQLDatabase.from_uri(MYSQL_URI)
     
     # SQL generation chain
@@ -249,7 +248,8 @@ class AskRequest(BaseModel):
     message: str
 
 @ask_question.post("/ask")
-def ask_post(payload: AskRequest):
+def ask_post(payload: AskRequest, current_user: str = Depends(get_current_user)):
+    """Ask a question about the data - requires authentication"""
     q = payload.message
     try:
         # Get active table context
@@ -260,6 +260,12 @@ def ask_post(payload: AskRequest):
         if not session["active_table"] and "No active dataset" in active_context:
             return {
                 "answer": "Please upload a CSV file first. I need a dataset to work with before I can answer questions about your data."
+            }
+        
+        # Verify user owns the active table
+        if session["active_table"] and session.get("current_user") != current_user:
+            return {
+                "answer": "You don't have access to the current active table. Please select one of your own tables."
             }
         
         question_type = get_question_type(q)
@@ -288,15 +294,7 @@ def ask_post(payload: AskRequest):
                     response = f"Columns in your active dataset '{table_name}':\n{', '.join(columns)}"
                     return {"answer": response}
                 else:
-                    # Fallback to all tables
-                    columns_info = get_table_columns()
-                    if "error" in columns_info:
-                        return {"answer": f"Error retrieving columns: {columns_info['error']}"}
-                    
-                    response = "Available columns by table:\n"
-                    for table, columns in columns_info.items():
-                        response += f"**{table}**: {', '.join(columns)}\n"
-                    return {"answer": response.strip()}
+                    return {"answer": "No active table found. Please upload a CSV file first."}
             except Exception as e:
                 return {"answer": f"Error retrieving column information: {str(e)}"}
         
@@ -352,7 +350,7 @@ def ask_post(payload: AskRequest):
                             "results": query_result,
                             "active_dataset": session["table_info"].get("original_name", session["active_table"]) if session["active_table"] else None
                         }
-                    
+                
                 except Exception as db_error:
                     return {
                         "sql_query": sql_query,
@@ -360,15 +358,16 @@ def ask_post(payload: AskRequest):
                     }
             else:
                 return {"answer": "Could not generate appropriate SQL query"}
-                
+        
         except Exception as sql_error:
             return {"error": f"Failed to generate SQL query: {str(sql_error)}"}
-        
+    
     except Exception as e:
+        print(f"Error in ask_post: {e}")
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
 @ask_question.get("/list_tables/")
-def list_tables():
+def list_tables(current_user: str = Depends(get_current_user)):
     """List available tables and their columns with active table highlighted"""
     try:
         table_names, schema_info = get_schema_info()
@@ -383,5 +382,5 @@ def list_tables():
             "active_table_info": session["table_info"]
         }
     except Exception as e:
+        print(f"Error in list_tables: {e}")
         raise HTTPException(status_code=500, detail=f"Error: {e}")
-
