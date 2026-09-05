@@ -53,6 +53,17 @@ def init_db():
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             )
         """))
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS user_documents (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                username VARCHAR(255) NOT NULL,
+                doc_name VARCHAR(255) NOT NULL,
+                file_name VARCHAR(255),
+                chunks_count INT,
+                upload_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY uq_user_doc (username, doc_name)
+            )
+        """))
 
 
 def list_user_table_names(username):
@@ -64,6 +75,43 @@ def list_user_table_names(username):
             {"u": username},
         ).fetchall()
     return [r[0] for r in rows]
+
+
+def record_document(username, doc_name, file_name, chunks_count):
+    """Upsert a document's metadata row."""
+    engine = get_engine()
+    with engine.begin() as conn:
+        conn.execute(text("""
+            INSERT INTO user_documents (username, doc_name, file_name, chunks_count)
+            VALUES (:u, :d, :f, :c)
+            ON DUPLICATE KEY UPDATE file_name = :f, chunks_count = :c, upload_time = CURRENT_TIMESTAMP
+        """), {"u": username, "d": doc_name, "f": file_name, "c": chunks_count})
+
+
+def list_user_documents(username):
+    """List document metadata owned by a user (most recent first)."""
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(text("""
+            SELECT doc_name, file_name, chunks_count, upload_time
+            FROM user_documents WHERE username = :u
+            ORDER BY upload_time DESC
+        """), {"u": username}).fetchall()
+    return [
+        {"doc_name": r[0], "file_name": r[1], "chunks": r[2],
+         "upload_time": r[3].isoformat() if r[3] else None}
+        for r in rows
+    ]
+
+
+def delete_document_record(username, doc_name):
+    """Remove a document's metadata row. Returns True if a row was deleted."""
+    engine = get_engine()
+    with engine.begin() as conn:
+        result = conn.execute(text(
+            "DELETE FROM user_documents WHERE username = :u AND doc_name = :d"),
+            {"u": username, "d": doc_name})
+        return result.rowcount > 0
 
 
 def get_last_active_table(conn, username):

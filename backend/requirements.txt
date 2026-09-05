@@ -35,6 +35,10 @@ matplotlib==3.10.3
 seaborn==0.13.2
 mysql-connector-python==9.4.0
 
+# --- RAG (document knowledge base) ---
+chromadb==1.5.9
+pypdf==6.17.0
+
 # --- Utilities ---
 requests==2.32.4
 filetype==1.2.0

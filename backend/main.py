@@ -17,6 +17,7 @@ from sqlmodel import SQLModel, Field, Session, select
 from upload import upload_csv
 from query import ask_question
 from report import report_router
+from documents import documents_router
 from csv_analysis import analyze_csv
 from auth import get_current_user, get_password_hash, verify_password, create_access_token
 from db import get_engine, init_db, resolve_active_table
@@ -40,6 +41,7 @@ app.mount("/graphs", StaticFiles(directory="graphs"), name="graphs")
 app.include_router(upload_csv, prefix="/api")
 app.include_router(ask_question, prefix="/api")
 app.include_router(report_router, prefix="/api")
+app.include_router(documents_router, prefix="/api")
 
 
 # --- User model & database bootstrap ---

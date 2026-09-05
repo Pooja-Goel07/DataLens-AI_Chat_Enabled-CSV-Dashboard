@@ -30,3 +30,6 @@ backend/instance/
 
 # Ignore generated graphs or static analysis output
 backend/graphs/
+
+# Ignore local Chroma vector store (RAG)
+backend/chroma_store/

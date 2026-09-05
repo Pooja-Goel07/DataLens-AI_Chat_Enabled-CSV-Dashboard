@@ -346,7 +346,7 @@ def analyze_csv(file_path: str, table_name: str = "dataset"):
 
     # Enhanced AI summary with structured format
     try:
-        llm = ChatGoogleGenerativeAI(model='gemini-1.5-flash', temperature=0.2, max_tokens=300)
+        llm = ChatGoogleGenerativeAI(model=os.getenv("LLM_MODEL", "gemini-flash-latest"), temperature=0.2, max_tokens=300)
         
         # Calculate key metrics
         missing_pct = round((df.isnull().sum().sum() / (len(df) * len(df.columns))) * 100, 1)

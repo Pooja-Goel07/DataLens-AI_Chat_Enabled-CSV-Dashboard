@@ -11,9 +11,14 @@ DEFAULT_ROW_LIMIT = 1000
 QUERY_TIMEOUT_MS = 8000
 
 # Write / DDL keywords that must never appear in a query we execute.
+# NOTE: REPLACE, TRUNCATE, and INSERT are intentionally NOT listed — they are also legitimate
+# SQL *functions* (e.g. REPLACE(str,...), TRUNCATE(num,d), INSERT(str,...)) that appear in
+# ordinary SELECTs (the prompt asks the model to strip currency symbols with REPLACE()).
+# Their dangerous *statement* forms (REPLACE INTO / TRUNCATE TABLE / INSERT INTO) start the
+# statement and are already rejected by the "must start with SELECT/WITH" check below.
 _DANGEROUS = re.compile(
-    r'\b(DROP|DELETE|TRUNCATE|UPDATE|INSERT|ALTER|CREATE|REPLACE|GRANT|REVOKE|'
-    r'RENAME|LOCK|MERGE|LOAD|HANDLER|INTO|OUTFILE|DUMPFILE)\b',
+    r'\b(DROP|DELETE|UPDATE|ALTER|CREATE|GRANT|REVOKE|'
+    r'RENAME|LOCK|LOAD|HANDLER|INTO|OUTFILE|DUMPFILE)\b',
     re.IGNORECASE,
 )
 # Table references: the identifier following FROM or JOIN (optionally backtick-quoted).
