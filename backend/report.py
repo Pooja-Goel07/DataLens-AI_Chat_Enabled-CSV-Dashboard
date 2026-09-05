@@ -1,32 +1,21 @@
-# report.py - Fixed version with proper authentication
-import os
+# report.py - JSON report + per-graph data endpoints.
+#
+# Active-table state is resolved per-user from the database (db.resolve_active_table).
 import pandas as pd
 import numpy as np
 from fastapi import APIRouter, HTTPException, Depends
-from sqlalchemy import create_engine, text
-from dotenv import load_dotenv
-import json
-from upload import get_current_session, get_current_user
 
-load_dotenv()
+from auth import get_current_user
+from db import get_engine, resolve_active_table
 
 report_router = APIRouter()
 
-MYSQL_URI = os.getenv("MYSQL_URI")
-if not MYSQL_URI:
-    raise ValueError("MYSQL_URI not found in environment variables.")
 
-def get_dataframe_from_active_table():
-    """Get DataFrame from the currently active table"""
+def get_dataframe(table_name):
+    """Load a table into a DataFrame using the shared engine."""
     try:
-        session = get_current_session()
-        if not session["active_table"]:
-            return None
-        
-        engine = create_engine(MYSQL_URI)
-        query = f"SELECT * FROM {session['active_table']}"
-        df = pd.read_sql(query, engine)
-        return df
+        engine = get_engine()
+        return pd.read_sql(f"SELECT * FROM `{table_name}`", engine)
     except Exception as e:
         print(f"Error loading DataFrame: {e}")
         return None
@@ -251,29 +240,25 @@ def generate_data_preview(df):
         return {"error": f"Error generating data preview: {str(e)}"}
 
 @report_router.get("/generate_report/")
-def generate_report(current_user: str = Depends(get_current_user)):
+def generate_report(table_name: str = None, current_user: str = Depends(get_current_user)):
     """Generate a comprehensive report for the active dataset"""
     try:
-        session = get_current_session()
-        
-        if not session["active_table"]:
+        ctx = resolve_active_table(current_user, table_name)
+
+        if not ctx["active_table"]:
             raise HTTPException(status_code=400, detail="No active dataset. Please upload a CSV file first.")
-        
-        # Verify user owns the active table
-        if session.get("current_user") != current_user:
-            raise HTTPException(status_code=403, detail="You don't have access to the current active table.")
-        
-        # Get the DataFrame
-        df = get_dataframe_from_active_table()
+
+        # Get the DataFrame (ownership already verified by resolve_active_table)
+        df = get_dataframe(ctx["active_table"])
         if df is None:
             raise HTTPException(status_code=500, detail="Could not load data from active table.")
-        
+
         # Generate all components of the report
         report = {
             "dataset_info": {
-                "name": session["table_info"].get("original_name", "Unknown"),
-                "file_name": session["table_info"].get("file_name", "Unknown"),
-                "upload_time": session["upload_time"]
+                "name": ctx["table_info"].get("original_name", "Unknown"),
+                "file_name": ctx["table_info"].get("file_name", "Unknown"),
+                "upload_time": ctx["upload_time"]
             },
             "summary": generate_summary_stats(df),
             "missing_values": detect_missing_values(df),
@@ -291,16 +276,14 @@ def generate_report(current_user: str = Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=f"Error generating report: {str(e)}")
 
 @report_router.get("/graph_data/{graph_type}/{column}")
-def get_graph_data(graph_type: str, column: str, current_user: str = Depends(get_current_user)):
+def get_graph_data(graph_type: str, column: str, table_name: str = None, current_user: str = Depends(get_current_user)):
     """Get data for a specific graph"""
     try:
-        session = get_current_session()
-        
-        # Verify user owns the active table
-        if session.get("current_user") != current_user:
-            raise HTTPException(status_code=403, detail="You don't have access to the current active table.")
-        
-        df = get_dataframe_from_active_table()
+        ctx = resolve_active_table(current_user, table_name)
+        if not ctx["active_table"]:
+            raise HTTPException(status_code=400, detail="No active dataset. Please upload a CSV file first.")
+
+        df = get_dataframe(ctx["active_table"])
         if df is None:
             raise HTTPException(status_code=500, detail="Could not load data from active table.")
         
@@ -346,16 +329,14 @@ def get_graph_data(graph_type: str, column: str, current_user: str = Depends(get
         raise HTTPException(status_code=500, detail=f"Error getting graph data: {str(e)}")
 
 @report_router.get("/scatter_data/{col1}/{col2}")
-def get_scatter_data(col1: str, col2: str, current_user: str = Depends(get_current_user)):
+def get_scatter_data(col1: str, col2: str, table_name: str = None, current_user: str = Depends(get_current_user)):
     """Get data for scatter plot"""
     try:
-        session = get_current_session()
-        
-        # Verify user owns the active table
-        if session.get("current_user") != current_user:
-            raise HTTPException(status_code=403, detail="You don't have access to the current active table.")
-        
-        df = get_dataframe_from_active_table()
+        ctx = resolve_active_table(current_user, table_name)
+        if not ctx["active_table"]:
+            raise HTTPException(status_code=400, detail="No active dataset. Please upload a CSV file first.")
+
+        df = get_dataframe(ctx["active_table"])
         if df is None:
             raise HTTPException(status_code=500, detail="Could not load data from active table.")
         
