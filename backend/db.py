@@ -55,6 +55,17 @@ def init_db():
         """))
 
 
+def list_user_table_names(username):
+    """Return the list of data-table names owned by a user (for allowlisting)."""
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(
+            text("SELECT table_name FROM user_tables WHERE username=:u"),
+            {"u": username},
+        ).fetchall()
+    return [r[0] for r in rows]
+
+
 def get_last_active_table(conn, username):
     """Return the user's most recently selected table name, or None."""
     row = conn.execute(
