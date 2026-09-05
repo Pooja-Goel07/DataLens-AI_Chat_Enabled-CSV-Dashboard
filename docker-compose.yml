@@ -1,0 +1,57 @@
+# DataLens full stack: MySQL + FastAPI backend (with embedded Chroma) + React frontend.
+#
+# Usage:
+#   1. Copy .env.example to .env and fill in GOOGLE_API_KEY and SECRET_KEY.
+#   2. docker compose up --build
+#   3. Frontend → http://localhost:5173 , backend API → http://localhost:8000
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpass}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-datalens}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD:-rootpass}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      MYSQL_URI: mysql+mysqlconnector://root:${MYSQL_ROOT_PASSWORD:-rootpass}@db:3306/${MYSQL_DATABASE:-datalens}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:?set GOOGLE_API_KEY in .env}
+      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env}
+      LLM_MODEL: ${LLM_MODEL:-gemini-flash-latest}
+      EMBED_MODEL: ${EMBED_MODEL:-models/gemini-embedding-001}
+      CHROMA_DIR: /data/chroma
+    volumes:
+      - chroma_data:/data/chroma
+      - graphs_data:/app/graphs
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:
+  chroma_data:
+  graphs_data:
